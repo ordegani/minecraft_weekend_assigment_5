@@ -131,6 +131,7 @@ Minecraft.tools = function(type, approachedBlock) {
     this.type = type;
     this.approachedBlock = approachedBlock;
     var self = this;
+    //create new
     this.toolHolder = $("<div>", {
         "class": "tool " + this.type
     }).append("<img src='http://itc.yananas.com/git/minecraft/images/" + this.type + ".png'>");
@@ -143,7 +144,7 @@ Minecraft.tools = function(type, approachedBlock) {
         $(this).addClass('active');
         $("#map").css('cursor', 'url(http://itc.yananas.com/git/minecraft/images/cursors/' + self.type + '.png), auto');
     })
-}
+}//https://www.w3schools.com/jquery/html_append.asp
 
 
 
