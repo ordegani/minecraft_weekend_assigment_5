@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <title>MC</title>
+</head>
+<style>
+    	div.block {
+		width: 50px;
+		height: 50px;
+		display: inline-block;
+		color: rgb(255, 255, 255);
+		}
+		#map {
+		    background: #8cbffb;
+		    line-height: 0;
+		    margin: 0 auto;
+		    position: relative;
+		    margin-top: 7px;
+		}
+
+		.inventory-container {
+		    position: fixed;
+		    left: 0;
+		    width: 70px;
+		    top: 0;
+		}
+		.tools-container {
+		    position: fixed;
+		    top: 0;
+		    right: 0;
+            width: 70px;
+            height: 70px;
+		}
+
+
+		.holder > div > img {
+		    width: 100%;
+		    padding: 7px;
+		}
+
+
+
+		.holder > div {
+		    display: inline-block;
+		    width: 60px;
+		    height: 60px;
+		    background-size: contain;
+		    background-image: url('http://itc.yananas.com/git/minecraft/images/slot.png');
+		    background-size: contain;
+		}
+		.holder > .active {
+		    box-shadow:grey;
+		}
+
+		.spage {
+		    position: fixed;
+		    background: url('http://itc.yananas.com/git/minecraft/images/dirt.png');
+		    z-index: 10;
+		    left: 0;
+		    right: 0;
+		    top: 0;
+		    bottom: 0;
+		}
+		.animate {
+		    transition: all 0.1s;
+		    -webkit-transition: all 0.1s;
+		}
+
+		.logoHolder {
+		    width: 80%;
+		    margin: 0 auto;
+		}
+		.logoHolder img {
+		    width: 100%;
+		}
+		.start {
+		    text-align: center;
+		}
+		.inv span {
+		    font-size: 1.5em;
+		    color: #fff;
+		    text-align: right;
+		    display: block;
+		    margin-top: -16px;
+		    margin-right: 8px;
+		}
+
+</style>
+<body>
+<div class="spage">
+	<div class="logoHolder"><img src="http://itc.yananas.com/git/minecraft/images/MinecraftLogo.png" alt=""></div>
+	<div class="start"><button class="welcome">Start</button></div>
+
+</div>
+<script>
+var Minecraft = {}; 
+
+Minecraft.allBlocks = [];
+Minecraft.selectedWidth = 1000; 
+//
+
+Minecraft.start = function() { 
+    var letsPlay = new Minecraft.map;
+    letsPlay.generateMap(Minecraft.selectedWidth);
+    letsPlay.generateBlock();
+    Minecraft.elements(Minecraft.random(2, Minecraft.oneLine), ground);
+    Minecraft.initializeTools();
+    
+}
+
+
+// randomize
+
+Minecraft.random = function(min, max, excluded) { 
+    var n = Math.floor(Math.random() * (max - min) + min);
+    if (n >= excluded) n++;
+    return n;}
+
+
+ // tools
+//https://osric.com/chris/accidental-developer/2008/04/the-javascript-dollar-sign-function/
+Minecraft.selectedTool = [];
+
+Minecraft.tools = function(type, approachedBlock) {
+    this.type = type;
+    this.approachedBlock = approachedBlock;
+    var self = this;
+    this.toolHolder = $("<div>", {
+        "class": "tool " + this.type
+    }).append("<img src='http://itc.yananas.com/git/minecraft/images/" + this.type + ".png'>");
+    $(".tools-container").append(this.toolHolder);
+    this.toolHolder.click(function() {
+        Minecraft.selectedInventory = null;
+        Minecraft.selectedTool = [];
+        Minecraft.selectedTool = self.approachedBlock;
+        $("div").removeClass('active');
+        $(this).addClass('active');
+        $("#map").css('cursor', 'url(http://itc.yananas.com/git/minecraft/images/cursors/' + self.type + '.png), auto');
+    })
+}
+
+
+
+Minecraft.initializeTools = function() {
+    new Minecraft.tools("axe", ["tree", "leaf"]);
+    new Minecraft.tools("shovel", ["dirt", "grass"]);
+    new Minecraft.tools("pickaxe", ["rock"]);
+}
+
+//
+
+Minecraft.block = function(type, x, y) {
+    this.type = type;
+    this.coordinates = [x, y];
+    var self = this;
+    this.blockHolder = $("<div>", {
+        "class": "block " + this.type,
+        "style": "background-image: url('http://itc.yananas.com/git/minecraft/images/" + this.type + ".png')"
+    });
+    $("#map").append(this.blockHolder);
+    this.changeType = function(type) { 
+        this.type = type;
+        this.blockHolder.css("background-image", "url('http://itc.yananas.com/git/minecraft/images/" + this.type + ".png')");
+        this.blockHolder.removeClass().addClass("block " + this.type);
+    }
+//
+    this.blockHolder.click(function() { 
+
+        for (var i = 0; i < Minecraft.selectedTool.length; i++) {
+            targetBlock = Minecraft.selectedTool[i];
+            if (targetBlock == self.type) {
+                if (testArray = self.type in inventoryCounter) {} else {
+                    inventoryCounter[self.type] = 0;
+                }
+                self.changeType("blank");
+                new Minecraft.inventory(targetBlock);
+            }
+
+        }
+        if (Minecraft.selectedInventory != null && inventoryCounter[Minecraft.selectedInventory] != 0) { // replace block from inventory
+            if (self.type == "blank") {
+                self.changeType(Minecraft.selectedInventory);
+                inventoryCounter[Minecraft.selectedInventory]--;
+                $("." + self.type + " span").text(inventoryCounter[Minecraft.selectedInventory]);
+                if (inventoryCounter[Minecraft.selectedInventory] == 0) { // empty inventory handler
+                    Minecraft.selectedInventory = null;
+                    $("#map").css('cursor', 'auto');
+                    $(".inventory-container ." + self.type).remove();
+                }}}
+
+    })}
+
+
+
+
+// inv
+
+Minecraft.inventory = function(type) {
+    var self = this;
+    this.type = type;
+    var $inv = $("<div>", {
+        'class': 'inv ' + this.type
+    }).append("<img src='http://itc.yananas.com/git/minecraft/images/" + this.type + ".png'>")
+    var $counting = $("<span>")
+    $($inv).append($counting);
+    inventoryCounter[targetBlock]++;
+    $("." + this.type + " span").text(inventoryCounter[type]);
+    if ($('.inventory-container .' + self.type).length == 0) {
+        $(".inventory-container").append($inv);
+        $("." + this.type + " span").text(inventoryCounter[type]);
+    }
+    $inv.click(function() {
+        Minecraft.selectedTool = [];
+        $(".tool").removeClass("active");
+        $(this).addClass("active");
+        $("#map").css('cursor', 'url(http://itc.yananas.com/git/minecraft/images/cursors/' + self.type + '.png), auto');
+        Minecraft.selectedInventory = self.type;
+    })
+
+}
+
+// 
+
+var inventoryCounter = {};
+
+// map area 
+
+Minecraft.map = function() {
+    this.x = 1;
+    this.y = 0;
+
+    this.generateMap = function(mapWidth) {
+        Minecraft.mapWidth = mapWidth;
+        var $mapHolder = $("<div>", {
+            id: 'map',
+            'style': 'width: ' + mapWidth + 'px'
+        }) 
+        
+        //buttons
+        var $toolContainer = $("<div>", {
+            'class': 'tools-container holder'
+        })
+        var $inventoryContainer = $("<div>", {
+            'class': 'inventory-container holder'
+        })
+        var $buttonsContainer = $("<div>", {
+            'class': 'buttons-contain holder'
+        })
+
+
+        $('body').append($mapHolder);
+        $($mapHolder).append($toolContainer);
+        $($mapHolder).append($inventoryContainer);
+        $($mapHolder).append($buttonsContainer);
+        
+
+        Minecraft.oneLine = mapWidth / 50; 
+    }
+    //debugger;
+    Minecraft.f = -1; 
+    this.generateLines = function(block, lines) { 
+        for (var i = 0; i < lines; i++) {
+            this.x += 1;
+            if (i % Minecraft.oneLine === 0) {
+                this.y += 1;
+                this.x = 1;
+            }
+            Minecraft.allBlocks[(Minecraft.f + 1)] = new Minecraft.block(block, this.x, this.y);
+            Minecraft.f++;
+        }
+        if (block == "blank") {
+            ground = (this.y - 1);
+        }
+    };
+    this.generateBlock = function() {
+        this.generateLines("blank", Minecraft.mapWidth / 5);
+        this.generateLines("blank", Minecraft.oneLine);
+        this.generateLines("dirt", Minecraft.mapWidth / 10);
+      
+    }
+}
+
+//debugger;
+
+//random arr
+Minecraft.RandomArray = new Array(Minecraft.oneLine);  
+
+//change
+Minecraft.elements = function(x, y) { 
+    for (i = 0; i < Minecraft.oneLine; i++) {
+        Minecraft.RandomArray[i] = Math.floor(Math.random() * 3 + 1);
+    }
+    randomNumber = Minecraft.random(0, Minecraft.oneLine, x)
+    randomNumber2 = Minecraft.random(0, Minecraft.oneLine, x)
+    for (var i = 0; i < Minecraft.allBlocks.length; i++) {
+
+
+        // change terrain
+
+        for (var terrain = 0; terrain < Minecraft.oneLine; terrain++) {
+            if (Minecraft.allBlocks[i].coordinates.join() == [terrain, (ground + Minecraft.RandomArray[terrain]) - 1].join()) {
+                Minecraft.allBlocks[i].changeType("grass");
+                Minecraft.allBlocks[i + Minecraft.oneLine].changeType("dirt");
+            }
+        }
+
+        // change cloud
+
+        for (var c = 0; c < 2; c++) {
+            for (var o = 0; o < 4; o++) {
+                if (Minecraft.allBlocks[i].coordinates.join() == [o + randomNumber, c + 2].join()) {
+                    Minecraft.allBlocks[i].changeType("cloud");
+                }
+            }
+        }
+
+     
+
+        // changes rocks
+        for (var z = 1; z < 5; z++) {
+            if (Minecraft.allBlocks[i].coordinates.join() == [randomNumber + (Minecraft.random(2, Minecraft.oneLine)), y].join()) {
+                Minecraft.allBlocks[i].changeType("rock");
+                Minecraft.allBlocks[i + Minecraft.oneLine].changeType("grass");
+                Minecraft.allBlocks[i + (Minecraft.oneLine * 2)].changeType("dirt");
+            }
+        }
+
+
+        // change tree
+
+        for (var j = 0; j < 2; j++) {
+            if (Minecraft.allBlocks[i].coordinates.join() == [x, (y - j)].join()) {
+                Minecraft.allBlocks[i].changeType("tree");
+            }
+
+            if (Minecraft.allBlocks[i].coordinates.join() == [x, (y - j) + 1].join()) {
+                Minecraft.allBlocks[i].changeType("tree");
+            }
+            // change leaves
+
+            for (var line = 0; line < 3; line++) {
+                for (var p = -1; p < 2; p++) {
+                    if (Minecraft.allBlocks[i].coordinates.join() == [(x + p), (y - 2) - line].join()) {
+                        Minecraft.allBlocks[i].changeType("leaf");
+                    }
+                }
+            }
+        }
+    }
+} // 
+//start
+$(document).ready(function() { 
+    $('.welcome').click(function() {
+        $('.spage').fadeOut("fast");
+        $("#map").remove();
+        Minecraft.allBlocks = [];
+        Minecraft.selectedTool = [];
+        inventoryCounter = {};
+        Minecraft.start();
+    })
+})
+
+Minecraft.start();
+</script>
+</body>
+</html>
